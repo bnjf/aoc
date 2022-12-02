@@ -13,6 +13,4 @@ awk '
   $1 == "C" && $2 == "X" { print 2 + 0; next; }
   $1 == "C" && $2 == "Y" { print 3 + 3; next; }
   $1 == "C" && $2 == "Z" { print 1 + 6; next; }
-  { exit 1; }' | awk '
-  {sum+=$0}
-  END {print sum}'
+  { exit 1; }'
