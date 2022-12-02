@@ -1,0 +1,13 @@
+#!/bin/sh
+
+awk '
+    /^$/  {print ++i, n; n=0; next}
+    END   {print ++i, n;}
+
+    # default
+    {n+=$0}' \
+  | sort -k 2,2nr \
+  | sed 3q \
+  | awk '
+    {n+=$2}
+    END{print n}'

@@ -1,0 +1,12 @@
+#!/bin/awk -f
+
+/^$/{i++;next}
+
+{a[i]+=$0}
+
+END{
+  max=0;
+  for (i in a) if (a[i]>max) max=a[i];
+  print max;
+}
+
