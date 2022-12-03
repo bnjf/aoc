@@ -1,0 +1,27 @@
+#!/bin/bash
+
+letters='abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ'
+typeset -i db=2#0000111111000100100000010100110011101010111101110010110100011011
+typeset -ai lut=(
+  17 18 19 0 10 20 56 1 14 11 21 48 26 57 30 2
+  15 54 12 24 22 35 49 37 61 27 51 58 44 31 39 3
+  16 0 9 55 13 47 25 29 53 23 34 36 60 50 43 38
+  62 8 46 28 52 33 59 42 7 45 32 41 6 40 5 4)
+
+typeset -i lineno=0
+declare -ia bag=(0 0 0)
+while read items; do
+  declare -i len="${#items}-1"
+  for i in $(seq 0 $len); do
+    declare item="${items:i:1}"
+    let "bag[lineno % 3] |= (1 << (62#$item - 10))"
+  done
+
+  if ((lineno++ == 2)); then
+    declare -i idx='((bag[0] & bag[1] & bag[2]) * db) >> 58'
+    let 'idx += 64 * (idx < 0), idx &= 63'
+    echo "$((62#${letters:lut[idx]:1} - 9))"
+    bag=(0 0 0)
+    lineno=0
+  fi
+done
