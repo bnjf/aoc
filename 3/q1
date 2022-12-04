@@ -1,7 +1,7 @@
 #!/bin/bash
 
-letters='ijk1bl_2fcmNr_v3g_dpnAOC_sQ_JwE4h1a_eMqu_ozB_PID_9Lt_y_H8KxG7F65'
-typeset -i db=2#0000111111000100100000010100110011101010111101110010110100011011
+declare letters=ijk1bl_2fcmNr_v3g_dpnAOC_sQ_JwE4h1a_eMqu_ozB_PID_9Lt_y_H8KxG7F65
+declare -i db=62#1lVH34yFmBR
 
 while read items; do
   declare -i len="${#items}-1"
