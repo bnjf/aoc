@@ -1,0 +1,6 @@
+#!/bin/bash
+
+while IFS='-,' read i j m n; do
+  ((i <= m && j >= n)) \
+    || ((m <= i && n >= j)) && echo 1
+done

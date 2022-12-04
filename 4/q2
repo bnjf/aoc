@@ -1,0 +1,5 @@
+#!/bin/bash
+
+while IFS='-,' read i j m n; do
+  ((j < m || i > n)) || echo 1
+done
