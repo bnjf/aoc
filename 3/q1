@@ -1,6 +1,6 @@
 #!/bin/bash
 
-letters='rstaku_bolvWA_Ecp_mywJXL_BZ_SFNdqaj_nVzD_xIK_YRM_iUC_H_QhTGPgOfe'
+letters='ijk1bl_2fcmNr_v3g_dpnAOC_sQ_JwE4h1a_eMqu_ozB_PID_9Lt_y_H8KxG7F65'
 typeset -i db=2#0000111111000100100000010100110011101010111101110010110100011011
 
 while read items; do
@@ -13,5 +13,5 @@ while read items; do
 
   declare -i idx='((bag[0] & bag[1]) * db) >> 58'
   let 'idx += 64 * (idx < 0), idx &= 63'
-  echo "$((62#${letters:idx:1} - 9))"
+  echo "$((62#${letters:idx:1}))"
 done
