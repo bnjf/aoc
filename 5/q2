@@ -1,0 +1,25 @@
+#!/bin/bash
+
+declare -a s=()
+
+# slurp
+while IFS='' read row; do
+  [[ "${row:0:3}" == " 1 " ]] && {
+    read _
+    break
+  }
+  declare -i c=0
+  while [[ "$row" ]]; do
+    c+=1 tok="${row:1:1}" row="${row:4}"
+    [[ "$tok" == " " ]] && continue
+    s[c]="$tok${s[c]}"
+  done
+done
+
+# move
+while IFS=' ' read _ sn _ ss _ sd; do
+  s[sd]+="${s[ss]:(-sn)}"
+  s[ss]="${s[ss]::(-sn)}"
+done
+
+echo $(for si in "${s[@]}"; do echo "${si:(-1)}"; done)
