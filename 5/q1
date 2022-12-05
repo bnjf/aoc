@@ -1,0 +1,42 @@
+#!/bin/bash
+
+letters='_ABCDEFGHIJKLMNOPQRSTUVWXYZ'
+
+declare -ia s=()
+while IFS='' read line; do
+  declare -i c=0
+  [[ "${line:0:3}" == " 1 " ]] && break
+  while [[ -n "$line" ]]; do
+    c+=1 tok="${line:1:1}" line="${line:4}"
+    [[ "$tok" == " " ]] && continue
+    let "s[c]=(s[c]*27)+(36#$tok-9)"
+    echo "adding $tok to $c"
+  done
+done
+
+# skip
+read line
+
+# repack
+for sn in "${!s[@]}"; do
+  declare -i i=0
+  while ((s[sn])); do let 'i=i*27+(s[sn]%27), s[sn]/=27'; done
+  let 's[sn]=i'
+done
+
+while IFS=' ' read _ sn _ ss _ sd; do
+  echo "move: $sn items from $ss to $sd"
+  while ((sn--)); do
+    let 's[sd] = (s[sd] * 27) + (s[ss] % 27)'
+    let 's[ss] /= 27'
+  done
+  echo "${s[@]}"
+done
+
+for sn in "${!s[@]}"; do
+  declare -i 'i=s[sn]'
+  echo "$sn: "$(while ((i)); do
+    echo "${letters:i%27:1}"
+    let i/=27
+  done)
+done
