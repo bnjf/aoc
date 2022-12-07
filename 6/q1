@@ -1,0 +1,22 @@
+#!/bin/sh
+
+# declare -i i=2#1111
+# declare -i c=0
+# while ((i)); do
+#   let 'c += 1, i &= i - 1'
+# done
+# echo "$c"
+# exit
+
+while IFS='' read line; do
+  declare -i i=-1 pos=0 c=0 count=0
+  declare -ia seen=(0 0 0 0)
+  while ((++i < ${#line})); do
+    let "c=36#${line:i:1}-10"
+    let 'seen[i%4]=c, pos=i'
+    ((seen[--pos % 4] ^ c && seen[--pos % 4] ^ c && seen[--pos % 4] ^ c)) \
+      && let '++count' || let 'count=i-pos'
+    ((count == 5)) && break
+  done
+  echo "$i"
+done
