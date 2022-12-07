@@ -1,0 +1,65 @@
+#!/bin/bash
+
+declare cur
+declare -Ai fs=()
+declare -i lineno=0
+
+die() {
+  echo "parse error at line number: $lineno" >&2
+  exit 1
+}
+
+mapfile -t lines
+while ((lineno < ${#lines[@]})); do
+  set -- ${lines[lineno++]}
+
+  [[ "$1" == '$' ]] || die
+
+  shift
+  case "$1" in
+  cd)
+    shift
+
+    [[ "$1" == /* ]] && cur="$1" || { [[ "$1" == .. ]] && cur="${cur%/*/}/" || cur+="$1/"; }
+    ;;
+  ls)
+    shift 2 && die
+
+    while [[ lineno -lt ${#lines[@]} ]]; do
+      set -- ${lines[lineno]}
+
+      [[ "$1" == '$' ]] && break
+
+      if [[ "$1" != "dir" ]]; then
+        fs["${cur}${2}"]=$1
+      fi
+
+      let lineno++
+    done
+    ;;
+  *) die ;;
+  esac
+done
+
+# backfill
+declare -Ai totals=()
+while read i d s; do
+  [[ "$i" == '/' ]] && break
+  declare up="${i%/*}/"
+  while [[ "$up" != '/' ]]; do
+    totals[$up]+="$s"
+    up="${up%/*/}/"
+  done
+  totals[$up]+="$s"
+done < <(
+  for i in "${!fs[@]}"; do
+    [[ "$i" == */ ]] && continue
+    # i got tired of typing saul_hudson
+    slash="${i//[^\/]/}"
+    echo "$i ${#slash} ${fs[$i]}"
+  done | sort -k 2nr
+)
+
+for k in "${!totals[@]}"; do
+  echo "${totals[$k]} $k"
+done
