@@ -1,0 +1,92 @@
+#!/bin/bash
+
+# the answer is not 661
+
+typeset -i w=0
+typeset -i i=0 x=0
+typeset s=''
+typeset -a seen=()
+
+check() {
+  for q in "${!queues[@]}"; do
+    set -- ${queues[q]}
+    typeset -i upper=0
+    typeset -i distance=0
+    while (($#)); do
+      : $((seen[$1] += 0))
+      if ((${s:$1:1} > upper)); then
+        : $((seen[$1] += upper))
+        upper=${s:$1:1}
+      fi
+      shift
+    done
+  done
+}
+
+while IFS='' read line; do
+  ((w || (w = "${#line}")))
+  #echo "$w: $line"
+  s+="$line"
+done
+
+set -eu
+typeset -a queues=()
+
+# top down
+queues=()
+: $((i = 0))
+while ((i < ${#s})); do
+  ((i % w && i % w < w - 1)) && queues[i % w]+="$i "
+  : $((++i))
+done
+check
+
+# bottom up
+queues=()
+: $((i = ${#s}))
+while ((i != 0)); do
+  ((i % w && i % w < w - 1)) && queues[i % w]+="$i "
+  : $((i--))
+done
+check
+
+# left to right
+queues=()
+: $((i = 0))
+while ((i < ${#s})); do
+  ((i / w && i / w < w - 1)) && queues[i / w]+="$i "
+  : $((++i))
+done
+check
+
+# right to left
+queues=()
+: $((i = ${#s}))
+while ((i != 0)); do
+  ((i / w && i / w < w - 1)) && queues[i / w]+="$i "
+  : $((--i))
+done
+check
+
+# mark perimeter
+: $((i = 0))
+while ((i < ${#s})); do
+  if ((i / w == 0 || i % w == 0 || i / w == w - 1 || i % w == w - 1)); then
+    : $((seen[i]++))
+  fi
+  : $((i++))
+done
+
+# echo "$s" | fold -b"$w"
+# for i in ${!seen[@]}; do
+#   s="${s:0:i}_${s:i+1}"
+# done
+# echo
+# echo "$s" | fold -b"$w"
+
+# echo
+# echo "seen: ${#seen[@]}"
+
+# row 61 col 78
+# row 78 col 55
+echo "${seen[@]}"
