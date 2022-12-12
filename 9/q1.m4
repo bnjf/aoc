@@ -42,11 +42,20 @@ m4_define(_V_HEAD_VISITED, 8)
 m4_define(_V_TAIL_VISITED, 16)
 
 m4_define(_ABS, (($1)*(1-2*(($1)<0))))
+
+m4_define(_STEP_HEAD, #{
+      while ((head$1 != $1#{0#} $2 step)); do
+        : $(( _V(headx,heady) &= ~_V_HEAD ))
+        : $(( head$1$2$2 ))
+        : $(( _V(headx,heady) |= _V_HEAD | _V_HEAD_VISITED ))
+        movetail
+      done
+#})
+
 m4_divert(0)
 _END
 # }}}
 
-# H T X:both #:seen .:unseen
 show() {
   typeset -i y x
   typeset -a s
@@ -55,78 +64,33 @@ show() {
   echo $'\e['m4_eval(_HEIGHT+2)'A'
   for y in {0..m4_eval(_HEIGHT-1)}; do
     echo "$y  ${_v[@]:y*m4_eval(_WIDTH):_WIDTH}"
-    # s=("#" .)
-    # echo "$y  $(
-    # for x in "${_v[@]:y*m4_eval(_WIDTH):_WIDTH}"; do
-    #   echo -n "${s[!(x&_V_TAIL_VISITED)]}"
-    # done)"
   done
 }
 
 movetail() {
   ((headx == tailx && heady == taily)) && return 0
 
-  local -i dx=headx-tailx
-  local -i dy=heady-taily
+  local -i dx=headx-tailx dy=heady-taily
 
   (( _ABS(dx) > 1 || _ABS(dy) > 1 )) || return 0
 
-  #echo "($headx,$heady) ($tailx,$taily) ($dx,$dy) ($((_ABS(dx))),$((_ABS(dy)))) $((dx%2)) $((dy%2))"
-  #show
-  if (( dx == 2 && dy == 0 )); then
-    let '_V(tailx++, taily) &= ~_V_TAIL'
-    let '_V(tailx, taily)   |=  _V_TAIL | _V_TAIL_VISITED'
-  elif (( dx == -2 && dy == 0 )); then
-    let '_V(tailx--, taily) &= ~_V_TAIL'
-    let '_V(tailx, taily)   |=  _V_TAIL | _V_TAIL_VISITED'
-  elif (( dx == 0 && dy == 2 )); then
-    let '_V(tailx, taily++) &= ~_V_TAIL'
-    let '_V(tailx, taily)   |=  _V_TAIL | _V_TAIL_VISITED'
-  elif (( dx == 1 && dy == -2 )); then
-    let '_V(tailx++, taily--) &= ~_V_TAIL'
-    let '_V(tailx, taily)     |=  _V_TAIL | _V_TAIL_VISITED'
-  elif (( dx == 0 && dy == -2 )); then
-    let '_V(tailx, taily--) &= ~_V_TAIL'
-    let '_V(tailx, taily)   |=  _V_TAIL | _V_TAIL_VISITED'
-  elif (( dx == -2 && dy == -1 )); then
-    let '_V(tailx--, taily--) &= ~_V_TAIL'
-    let '_V(tailx, taily)   |=  _V_TAIL | _V_TAIL_VISITED'
-  elif (( dx == 2 && dy == 1 )); then
-    let '_V(tailx++, taily++) &= ~_V_TAIL'
-    let '_V(tailx, taily)   |=  _V_TAIL | _V_TAIL_VISITED'
-  elif (( dx == -2 && dy == 1 )); then
-    let '_V(tailx--, taily++) &= ~_V_TAIL'
-    let '_V(tailx, taily)   |=  _V_TAIL | _V_TAIL_VISITED'
-  elif (( dx == 2 && dy == -1 )); then
-    let '_V(tailx++, taily--) &= ~_V_TAIL'
-    let '_V(tailx, taily)   |=  _V_TAIL | _V_TAIL_VISITED'
-  elif (( dx == -1 && dy == -2 )); then
-    let '_V(tailx--, taily--) &= ~_V_TAIL'
-    let '_V(tailx, taily)   |=  _V_TAIL | _V_TAIL_VISITED'
-  elif (( dx == 1 && dy == 2 )); then
-    let '_V(tailx++, taily++) &= ~_V_TAIL'
-    let '_V(tailx, taily)   |=  _V_TAIL | _V_TAIL_VISITED'
-  elif (( dx == -1 && dy == 2 )); then
-    let '_V(tailx--, taily++) &= ~_V_TAIL'
-    let '_V(tailx, taily)   |=  _V_TAIL | _V_TAIL_VISITED'
-  else
-    echo "step error" >&2
-    exit
-  fi
+  : $(( _V(tailx, taily) &= ~_V_TAIL ))
+  : $(( tailx += (1 - 2 * (dx < 0)) * (dx != 0) ))
+  : $(( taily += (1 - 2 * (dy < 0)) * (dy != 0) ))
+  : $(( _V(tailx, taily) |=  _V_TAIL | _V_TAIL_VISITED ))
 }
 
-# test starting pos (0,0)
-# actual starting pos (209,15), x 0..281, y 0..229
 declare -a v
-
 ## _FORV()
 _V(x,y)=0
 ## _ENDFORV()
 
 declare -i headx=_INIT_X heady=_INIT_Y
 declare -i tailx=_INIT_X taily=_INIT_Y
-let '_V(headx, heady) |= _V_HEAD | _V_HEAD_VISITED'
-let '_V(tailx, taily) |= _V_TAIL | _V_TAIL_VISITED'
+: $((
+_V(headx, heady) |= _V_HEAD | _V_HEAD_VISITED,
+_V(tailx, taily) |= _V_TAIL | _V_TAIL_VISITED
+))
 
 set -eu
 mapfile -t orders
@@ -142,32 +106,16 @@ mapfile -t orders
   #show
   case $direction in
     D)
-      while ((heady != y0 + step)); do
-        let '_V(headx,heady++) &= ~_V_HEAD'
-        let '_V(headx,heady)   |=  _V_HEAD | _V_HEAD_VISITED'
-        movetail
-      done
+      ## _STEP_HEAD(y, +)
       ;;
     U)
-      while ((heady != y0 - step)); do
-        let '_V(headx, heady--) &= ~_V_HEAD'
-        let '_V(headx, heady)   |=  _V_HEAD | _V_HEAD_VISITED'
-        movetail
-      done
+      ## _STEP_HEAD(y, -)
       ;;
     R)
-      while ((headx != x0 + step)); do
-        let '_V(headx++, heady) &= ~_V_HEAD'
-        let '_V(headx, heady)   |=  _V_HEAD | _V_HEAD_VISITED'
-        movetail
-      done
+      ## _STEP_HEAD(x, +)
       ;;
     L)
-      while ((headx != x0 - step)); do
-        let '_V(headx--, heady) &= ~_V_HEAD'
-        let '_V(headx, heady)   |=  _V_HEAD | _V_HEAD_VISITED'
-        movetail
-      done
+      ## _STEP_HEAD(x, -)
       ;;
     *)
       exit 1
@@ -176,7 +124,6 @@ mapfile -t orders
 
   let '_V(headx, heady) |= _V_HEAD'
   movetail
-  #show
 }
 ## _ENDFORI()
 
