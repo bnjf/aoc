@@ -1,0 +1,28 @@
+#!/bin/bash
+
+declare -i cycle=1 x=1
+
+tick() {
+  echo "$cycle $x"
+  : $((cycle++))
+  return
+}
+
+while IFS='' read line; do
+  set -- $line
+  case $1 in
+  noop)
+    tick
+    ;;
+  addx)
+    tick
+    tick
+    : $((x += $2))
+    ;;
+  *)
+    echo "unknown op" >&2
+    exit 1
+    ;;
+  esac
+done
+tick

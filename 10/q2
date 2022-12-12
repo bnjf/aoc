@@ -1,0 +1,34 @@
+#!/bin/bash
+
+declare -i cycle=1 x=1
+declare -a row0=(. . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .)
+declare -a row=("${row0[@]}")
+
+tick() {
+  declare -i 'pos=((cycle-1) % 40)'
+  if ((x == pos - 1 || x == pos || x == pos + 1)); then
+    ((pos > 39 || pos < 0)) && exit 1
+    row[pos]='#'
+  fi
+
+  ((cycle++ % 40 == 0)) && {
+    echo "${row[@]}" | tr -d ' '
+    row=("${row0[@]}")
+  }
+
+  return
+}
+
+while IFS='' read line; do
+  set -- $line
+
+  tick
+  case $1 in
+  noop) ;;
+  addx)
+    tick
+    let "x += $2"
+    ;;
+  *) exit 1 ;;
+  esac
+done
