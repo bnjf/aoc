@@ -6,10 +6,8 @@ declare -a row=("${row0[@]}")
 
 tick() {
   declare -i 'pos=((cycle-1) % 40)'
-  if ((x == pos - 1 || x == pos || x == pos + 1)); then
-    ((pos > 39 || pos < 0)) && exit 1
-    row[pos]='#'
-  fi
+
+  ((x == pos - 1 || x == pos || x == pos + 1)) && row[pos]='#'
 
   ((cycle++ % 40 == 0)) && {
     echo "${row[@]}" | tr -d ' '
