@@ -1,0 +1,54 @@
+#!/bin/bash
+
+set -eu
+
+declare -ai operands conditions thens elses
+declare -a ops items
+
+slurp() {
+  local _ mid item op operand cond tt tf
+  local old=-1 # guard input with a dummy ref
+  local IFS=' :,'
+  while true; do
+    read _ mid
+    read -a item
+    read _ _ _ _ op operand
+    read _ _ _ cond
+    read _ _ _ _ _ tt
+    read _ _ _ _ _ tf
+
+    item=("${item[@]:2}")
+    items[mid]="${item[@]}"
+
+    ops[mid]="$op"
+    : $((operands[mid] = operand, conditions[mid] = cond, thens[mid] = tt, elses[mid] = tf))
+
+    # operand -1 -> op **, operand 2
+    ((${operands[mid]} < 0)) && {
+      ops[mid]='**'
+      operands[mid]=2
+    }
+
+    read _ || break
+  done
+}
+
+# init
+slurp
+
+declare -i w
+declare -ai handled=(0 0 0 0)
+for round in {1..20}; do
+  for mid in "${!ops[@]}"; do
+    set -- ${items[mid]}
+    items[mid]=""
+    while (($#)); do
+      let "w = ($1 ${ops[mid]} operands[mid]) / 3"
+      ((handled[mid]++, w % ${conditions[mid]})) && items[elses[mid]]+=" $w" || items[thens[mid]]+=" $w"
+      shift
+    done
+  done
+done
+
+set -- $(for mid in "${!ops[@]}"; do echo "${handled[mid]}"; done | sort -rn | sed 2q)
+echo "$(($1 * $2))"
