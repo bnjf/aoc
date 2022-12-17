@@ -1,0 +1,109 @@
+#!/bin/bash
+
+set -eu
+
+typeset -i WIDTH=1
+typeset -i HEIGHT=1
+typeset -ir INT_MAX='1<<63-1'
+typeset -i S_MARKER=0
+
+typeset -i lineno=0
+typeset -i colno=0
+
+typeset v
+typeset -i vi
+
+typeset -a -i g
+
+# S:1 a..z E
+#
+# (1..28)
+while read y x d; do
+  ((x > WIDTH)) && WIDTH=x
+  ((y > HEIGHT)) && HEIGHT=y
+  if ((d == 1)); then
+    : $((d++, S_MARKER = (WIDTH + 1) * y + x))
+  fi
+  g[(WIDTH + 1) * y + x]=d
+done < <(
+  while IFS='' read l; do
+    : $((colno = 0))
+    while ((colno < ${#l})); do
+      v=${l:colno:1}
+      #: $(((vi = 62#$v - 9) > 26 && (vi = (27 * ((vi - 31) == 0))), ++vi))
+      let "(vi = 62#$v - 9) > 26 && (vi = (27 * ((vi - 31) == 0))), ++vi"
+      echo "$lineno $colno $vi"
+      : $((colno++))
+    done
+    : $((lineno++))
+  done
+)
+let 'WIDTH++, HEIGHT++'
+
+echo "S_MARKER:$((S_MARKER))" >&2
+
+# D {{{
+D() {
+  typeset -a -i dist
+  typeset -a -i prev
+  typeset -a -i Q
+
+  for v in "${!g[@]}"; do
+    dist[v]=INT_MAX
+    prev[v]=-1
+    Q+=(v)
+  done
+
+  dist[S_MARKER]=0
+  # ... this took 4 days
+  #dist[0]=0
+
+  typeset -i u
+  while (("${#Q[@]}" > 0)); do
+    set -- $(for v in "${!Q[@]}"; do echo "$v ${dist[Q[v]]}"; done | sort -k 2n | sed 1q)
+    u="${1:?}"
+
+    # 28 => "E"
+    ((g[u] == 28)) && break
+
+    unset Q[u]
+
+    # find connections {{{
+    typeset -a -i n
+    n=()
+    if (((u / WIDTH) > 0 && g[u] >= g[u - WIDTH] - 1)); then n+=(u-WIDTH); fi
+    if (((u / WIDTH) < (HEIGHT - 1) && g[u] >= g[u + WIDTH] - 1)); then n+=(u+WIDTH); fi
+    if (((u % WIDTH) > 0 && g[u] >= g[u - 1] - 1)); then n+=(u-1); fi
+    if (((u % WIDTH) < (WIDTH - 1) && g[u] >= g[u + 1] - 1)); then n+=(u+1); fi
+
+    echo "$u connected to ${n[@]}" >&2
+    # }}}
+
+    for ni in "${n[@]}"; do
+      ((Q[ni])) || continue
+      typeset -i alt='dist[u] + g[ni]'
+
+      if ((alt <= dist[ni])); then
+        dist[ni]=alt
+        prev[ni]=u
+      fi
+    done
+  done
+
+  local -ai S
+  set -eu
+  if ((prev[u] || u == S_MARKER)); then
+    while ((u != -1)); do
+      S+=(u)
+      u=prev[u]
+    done
+  fi
+  echo "${S[@]}"
+  echo "${#S[@]}"
+}
+# }}}
+
+#for i in "${g[@]}"; do echo -n "$i "; done
+
+# ... it's <411
+D
