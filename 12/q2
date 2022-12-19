@@ -2,7 +2,7 @@
 
 set -eu
 
-typeset -i WIDTH=1 HEIGHT=1 S_MARKER=0 lineno=0 colno=0
+typeset -i WIDTH=1 HEIGHT=1 S_MARKER=0 E_MARKER=0 lineno=0 colno=0
 typeset -ir INT_MAX='1<<63-1'
 
 typeset v
@@ -15,6 +15,7 @@ while read y x d; do
   ((x > WIDTH)) && WIDTH=x
   ((y > HEIGHT)) && HEIGHT=y
   ((d == 1 && (d++, S_MARKER = (WIDTH + 1) * y + x), 1))
+  ((d == 27 && E_MARKER == 0 && (E_MARKER = (WIDTH + 1) * y + x), 1))
   g[(WIDTH + 1) * y + x]=d
 done < <(
   while IFS='' read l; do
@@ -40,9 +41,9 @@ for v in "${!g[@]}"; do
   Q+=(v)
 done
 
+# q2
+S_MARKER="${1:-S_MARKER}"
 dist[S_MARKER]=0
-# ... this took 4 days
-#dist[0]=0
 
 typeset -i u
 typeset -a -i n
@@ -50,7 +51,7 @@ while (("${#Q[@]}" > 0)); do
   set -- $(for v in "${!Q[@]}"; do echo "$v ${dist[Q[v]]}"; done | sort -k 2n | sed 1q)
   u="${1:?}"
 
-  ((g[u] == 28)) && break # 28 => "E"
+  #((g[u] == 28)) && break # 28 => "E"
 
   unset Q[u]
 
@@ -63,7 +64,6 @@ while (("${#Q[@]}" > 0)); do
   for ni in "${n[@]}"; do
     ((Q[ni])) || continue
     typeset -i alt='dist[u] + 1' #g[ni]'
-    #echo "$u $ni" >&3
 
     if ((alt <= dist[ni])); then
       dist[ni]=alt
@@ -71,6 +71,29 @@ while (("${#Q[@]}" > 0)); do
     fi
   done
 done
+
+echo "from $((S_MARKER / WIDTH)),$((S_MARKER % WIDTH)): ${dist[E_MARKER]}"
+exit
+
+typeset -i upper=0
+for vi in "${!g[@]}"; do
+  ((vi && vi % WIDTH == 0)) && echo
+  if ((g[vi] == 2)); then
+    if ((dist[vi] != INT_MAX && dist[vi] >= upper)); then
+      upper=dist[vi]
+      echo -n "$(
+        tput setaf 9
+        tput bold
+      )${dist[vi]}$(tput sgr0) "
+    else
+      echo -n "$(tput setaf 1)${dist[vi]}$(tput sgr0) "
+    fi
+  else
+    echo -n "${dist[vi]} "
+  fi
+done
+echo
+exit
 
 typeset -ai S
 if ((prev[u] || u == S_MARKER)); then
