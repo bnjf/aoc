@@ -7,6 +7,7 @@
 %}
 
 %token NUMBER
+%debug
 
 %%
 
@@ -16,10 +17,13 @@ record: record_left record_right { printf("[%d] record done\n\n", yylineno / 3);
 record_left: list '\n' { puts("record_left"); }
 record_right: list '\n' { puts("record_right"); }
 
-list: '[' lhead ltail ']';
-lhead: list | NUMBER;
-ltail: | ltail | ',' ltail_items;
-ltail_items: list | NUMBER;
+list: '[' list_head ']';
+list_head: /* empty */
+         | list_tail;
+list_tail: list_items
+         | list_tail ',' list_items;
+list_items: NUMBER {printf("%d ", $1);}
+          | list;
 
 /* alist: '[' list_head list_tail ']' */
 /* list_head: | list | NUMBER ; */
@@ -40,5 +44,6 @@ int yyerror(const char *s) {
 }
 
 int main() {
+  //yydebug=1;
   return yyparse();
 }
