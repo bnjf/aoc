@@ -51,12 +51,10 @@ int q1(int *pa, int *pb) {
   /* if (*pa == LEAVE && *pb == LEAVE) { return 0; } */
   /* if (*pb == LEAVE) { return 1; } */
   /* if (*pa == LEAVE) { return 0; } */
-  if (*pa == LEAVE || *pb == LEAVE) {
-    return *pa - *pb;
-  }
+  if (*pa == LEAVE || *pb == LEAVE) { return *pa - *pb; }
 
-  if (*pb == ENTER) { int tmp[] = {ENTER,*pa,LEAVE}; return q1(tmp, pb); }
-  if (*pa == ENTER) { int tmp[] = {ENTER,*pb,LEAVE}; return q1(pa, tmp); }
+  if (*pb == ENTER) { int tmp[] = {ENTER, *pa, LEAVE}; return q1(tmp, pb); }
+  if (*pa == ENTER) { int tmp[] = {ENTER, *pb, LEAVE}; return q1(pa, tmp); }
 
   abort();
 }
