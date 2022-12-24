@@ -2,7 +2,6 @@
 %{
   #include <stdio.h>
   #include <stdlib.h>
-
   extern int yylineno;
   int yylex(void);
   int yyerror(const char *s);
@@ -15,29 +14,20 @@
 %}
 
 %token NUMBER
-%debug
 
 %%
 
-file: record            { p = a; }
-    | file '\n' record  { p = a; }
+file        : file '\n' rec | rec ;
+rec         : rec_l rec_r ;
+rec_l       : list '\n' { p = b; } ;
+rec_r       : list '\n' { printf("%d %d\n", pair++, q1(a, b)); p = a; } ;
+list        : list_begin list_body list_end ;
+list_begin  : '[' { $$ = *p++ = ENTER; } ;
+list_end    : ']' { $$ = *p++ = LEAVE; } ;
+list_body   : list_tail | /* empty */ ;
+list_tail   : list_tail ',' list_items | list_items ;
+list_items  : list | NUMBER { *p++ = $1; } ;
 
-record: record_left record_right;
-
-record_left: list '\n'  { p = b; }
-record_right: list '\n' { printf("%d %d\n", pair++, q1(a, b)); p = a; }
-
-list: list_begin list_body list_end;
-
-list_begin: '['         { $$ = *p++ = ENTER; };
-list_end: ']'           { $$ = *p++ = LEAVE; };
-
-list_body: /* empty */
-         | list_tail;
-list_tail: list_items
-         | list_tail ',' list_items;
-list_items: NUMBER      { *p++ = $1; }
-          | list; 
 %%
 
 int q1(int *pa, int *pb) {
@@ -53,10 +43,18 @@ int q1(int *pa, int *pb) {
   /* if (*pa == LEAVE) { return 0; } */
   if (*pa == LEAVE || *pb == LEAVE) { return *pa - *pb; }
 
-  if (*pb == ENTER) { int tmp[] = {ENTER, *pa, LEAVE}; return q1(tmp, pb); }
-  if (*pa == ENTER) { int tmp[] = {ENTER, *pb, LEAVE}; return q1(pa, tmp); }
-
-  abort();
+  int tmp[] = {ENTER, 0, LEAVE};
+  if (*pb == ENTER) {
+    tmp[1] = *pa; pa = tmp;
+  } else if (*pa == ENTER) {
+    tmp[1] = *pb; pb = tmp;
+  } else {
+    abort();
+  }
+  return q1(pa, pb);
+  /* if (*pb == ENTER) { int tmp[] = {ENTER, *pa, LEAVE}; return q1(tmp, pb); } */
+  /* if (*pa == ENTER) { int tmp[] = {ENTER, *pb, LEAVE}; return q1(pa, tmp); } */
+  /* abort(); */
 }
 
 int yyerror(const char *s) { return fprintf(stderr, "line %d: %s\n", yylineno, s); }
