@@ -19,16 +19,21 @@
 
 %%
 
-file        : file '\n' rec | rec ;
-rec         : rec_l rec_r ;
-rec_l       : list '\n' { *p = ~INT_MAX; sp = stack; p = b; } ;
-rec_r       : list '\n' { *p = ~INT_MAX; printf("result: %d %d\n", pair++, q1()); sp = stack; p = a; } ;
-list        : list_begin list_body list_end ;
-list_begin  : '[' { *sp++ = p++; } ;
-list_end    : ']' { sp--; **sp = *sp - p; } ;
-list_body   : list_tail | /* empty */ ;
-list_tail   : list_tail ',' list_items | list_items ;
-list_items  : list | NUMBER { *p++ = $1; } ;
+file        : file '\n' rec | rec
+rec         : rec_l rec_r
+rec_l       : list '\n'
+  { *p = ~INT_MAX; sp = stack; p = b; }
+rec_r       : list '\n'
+  { *p = ~INT_MAX; printf("%d %d\n", pair++, q1()); sp = stack; p = a; }
+list        : list_begin list_body list_end
+list_begin  : '['
+  { *sp++ = p++; }
+list_end    : ']'
+  { sp--; **sp = *sp - p; }
+list_body   : list_tail | /* empty */
+list_tail   : list_tail ',' list_items | list_items
+list_items  : list | NUMBER
+  { *p++ = $1; }
 
 %%
 
